@@ -4,4 +4,4 @@ paths:
   - src
 
 paths-ignore:
-  - src/node_modules
+  - adr/
