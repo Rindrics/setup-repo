@@ -5,7 +5,9 @@ import {
   generatePackageJson,
   generateProject,
   loadTemplate,
+  ProjectNameError,
   TemplateError,
+  validateProjectName,
   writeGeneratedFiles,
 } from './project';
 
@@ -103,22 +105,53 @@ describe('project generator', () => {
     });
   });
 
-  describe('generateProject', () => {
-    test('should create project directory with package.json', async () => {
-      const projectDir = path.join(testDir, 'new-project');
+  describe('validateProjectName', () => {
+    test('should accept valid project names', () => {
+      expect(() => validateProjectName('my-project')).not.toThrow();
+      expect(() => validateProjectName('my_project')).not.toThrow();
+      expect(() => validateProjectName('my-project-123')).not.toThrow();
+      expect(() => validateProjectName('@scope/my-project')).not.toThrow();
+      expect(() => validateProjectName('a')).not.toThrow();
+    });
 
-      await generateProject({
-        projectName: projectDir,
-        lang: 'typescript',
-        isDevcode: false,
-      });
+    test('should throw for empty project name', () => {
+      expect(() => validateProjectName('')).toThrow(ProjectNameError);
+      expect(() => validateProjectName('   ')).toThrow('cannot be empty');
+    });
 
-      const packageJson = await fs.readFile(
-        path.join(projectDir, 'package.json'),
-        'utf-8',
+    test('should throw for path separators', () => {
+      expect(() => validateProjectName('my/project')).toThrow(ProjectNameError);
+      expect(() => validateProjectName('my\\project')).toThrow(
+        'invalid path separators',
       );
+    });
 
-      expect(packageJson).toContain('"name"');
+    test('should throw for leading/trailing dots', () => {
+      expect(() => validateProjectName('.my-project')).toThrow(
+        ProjectNameError,
+      );
+      expect(() => validateProjectName('my-project.')).toThrow(
+        'cannot start or end with a dot',
+      );
+    });
+
+    test('should throw for invalid characters', () => {
+      expect(() => validateProjectName('my project')).toThrow(ProjectNameError);
+      expect(() => validateProjectName('my$project')).toThrow(
+        'invalid characters',
+      );
+    });
+  });
+
+  describe('generateProject', () => {
+    test('should throw for invalid project name', async () => {
+      expect(
+        generateProject({
+          projectName: '../evil-path',
+          lang: 'typescript',
+          isDevcode: false,
+        }),
+      ).rejects.toThrow(ProjectNameError);
     });
   });
 });

@@ -151,8 +151,65 @@ export async function writeGeneratedFiles(
   }
 }
 
+export class ProjectNameError extends Error {
+  constructor(
+    message: string,
+    public readonly projectName: string,
+  ) {
+    super(message);
+    this.name = 'ProjectNameError';
+  }
+}
+
+// Allow scoped packages (@scope/name), letters, numbers, hyphens, underscores, and dots (not leading/trailing)
+const VALID_PROJECT_NAME_REGEX = /^(@[\w-]+\/)?[\w][\w.-]*[\w]$|^[\w]$/;
+
+export function validateProjectName(projectName: string): void {
+  if (!projectName || projectName.trim() === '') {
+    throw new ProjectNameError('Project name cannot be empty', projectName);
+  }
+
+  // Check for path separators (except in scoped package prefix)
+  const nameWithoutScope = projectName.replace(/^@[\w-]+\//, '');
+  if (nameWithoutScope.includes('/') || nameWithoutScope.includes('\\')) {
+    throw new ProjectNameError(
+      `Project name "${projectName}" contains invalid path separators`,
+      projectName,
+    );
+  }
+
+  // Check for leading/trailing dots
+  if (nameWithoutScope.startsWith('.') || nameWithoutScope.endsWith('.')) {
+    throw new ProjectNameError(
+      `Project name "${projectName}" cannot start or end with a dot`,
+      projectName,
+    );
+  }
+
+  // Check for valid characters
+  if (!VALID_PROJECT_NAME_REGEX.test(projectName)) {
+    throw new ProjectNameError(
+      `Project name "${projectName}" contains invalid characters. Use only letters, numbers, hyphens, underscores, and dots.`,
+      projectName,
+    );
+  }
+}
+
 export async function generateProject(options: InitOptions): Promise<void> {
+  validateProjectName(options.projectName);
+
   const files: GeneratedFile[] = [await generatePackageJson(options)];
 
-  await writeGeneratedFiles(options.projectName, files);
+  try {
+    await writeGeneratedFiles(options.projectName, files);
+  } catch (error) {
+    if (error instanceof FileWriteError) {
+      throw error;
+    }
+    throw new FileWriteError(
+      `Failed to generate project "${options.projectName}": ${error instanceof Error ? error.message : String(error)}`,
+      options.projectName,
+      error instanceof Error ? error : undefined,
+    );
+  }
 }
