@@ -2,8 +2,18 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import ejs from 'ejs';
 import type { InitOptions } from '../types';
+import { getLatestVersions, getNpmUsername } from '../utils/npm';
 
 const TEMPLATES_DIR = path.join(import.meta.dir, '../templates');
+
+const DEV_DEPENDENCIES = [
+  '@biomejs/biome',
+  '@commitlint/cli',
+  '@commitlint/config-conventional',
+  'bun-types',
+  'husky',
+  'typescript',
+];
 
 export interface GeneratedFile {
   path: string;
@@ -22,9 +32,17 @@ export async function loadTemplate(
 export async function generatePackageJson(
   options: InitOptions,
 ): Promise<GeneratedFile> {
+  // Fetch latest versions and npm username in parallel
+  const [versions, author] = await Promise.all([
+    getLatestVersions(DEV_DEPENDENCIES),
+    getNpmUsername(),
+  ]);
+
   const content = await loadTemplate('typescript/package.json.ejs', {
     name: options.projectName,
     isDevcode: options.isDevcode,
+    author: author ?? '',
+    versions,
   });
 
   return {

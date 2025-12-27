@@ -13,15 +13,14 @@
     "prepare": "husky"
   },
   "keywords": [],
-  "author": "",
+  "author": "<%= author %>",
   "license": "MIT",
   "devDependencies": {
-    "@biomejs/biome": "^2.0.0",
-    "@commitlint/cli": "^19.0.0",
-    "@commitlint/config-conventional": "^19.0.0",
-    "bun-types": "^1.0.0",
-    "husky": "^9.0.0",
-    "typescript": "^5.0.0"
+    "@biomejs/biome": "^<%= versions['@biomejs/biome'] %>",
+    "@commitlint/cli": "^<%= versions['@commitlint/cli'] %>",
+    "@commitlint/config-conventional": "^<%= versions['@commitlint/config-conventional'] %>",
+    "bun-types": "^<%= versions['bun-types'] %>",
+    "husky": "^<%= versions['husky'] %>",
+    "typescript": "^<%= versions['typescript'] %>"
   }
 }
-
