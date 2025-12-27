@@ -1,6 +1,6 @@
 {
   "name": "@rindrics/setup-repo",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "setup GitHub repo with dev tools",
   "type": "module",
   "bin": {
