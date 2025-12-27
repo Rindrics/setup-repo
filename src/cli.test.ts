@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { createProgram } from './cli';
 import packageJson from '../package.json';
+import { createProgram } from './cli';
 
 describe('CLI', () => {
   test('should have correct name from package.json', () => {
