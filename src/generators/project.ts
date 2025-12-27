@@ -20,13 +20,61 @@ export interface GeneratedFile {
   content: string;
 }
 
+export class TemplateError extends Error {
+  constructor(
+    message: string,
+    public readonly templatePath: string,
+    public readonly cause?: Error,
+  ) {
+    super(message);
+    this.name = 'TemplateError';
+  }
+}
+
 export async function loadTemplate(
   templatePath: string,
   data: Record<string, unknown>,
 ): Promise<string> {
-  const fullPath = path.join(TEMPLATES_DIR, templatePath);
-  const template = await fs.readFile(fullPath, 'utf-8');
-  return ejs.render(template, data);
+  // Resolve and validate the path to prevent path traversal attacks
+  const resolvedTemplatesDir = path.resolve(TEMPLATES_DIR);
+  const fullPath = path.resolve(TEMPLATES_DIR, templatePath);
+
+  if (!fullPath.startsWith(resolvedTemplatesDir + path.sep)) {
+    throw new TemplateError(
+      `Invalid template path: "${templatePath}" resolves outside templates directory`,
+      templatePath,
+    );
+  }
+
+  let template: string;
+  try {
+    template = await fs.readFile(fullPath, 'utf-8');
+  } catch (error) {
+    const fsError = error as NodeJS.ErrnoException;
+    if (fsError.code === 'ENOENT') {
+      throw new TemplateError(
+        `Template not found: "${templatePath}"`,
+        templatePath,
+        fsError,
+      );
+    }
+    throw new TemplateError(
+      `Failed to read template "${templatePath}": ${fsError.message}`,
+      templatePath,
+      fsError,
+    );
+  }
+
+  try {
+    return ejs.render(template, data);
+  } catch (error) {
+    const renderError = error as Error;
+    throw new TemplateError(
+      `Failed to render template "${templatePath}": ${renderError.message}`,
+      templatePath,
+      renderError,
+    );
+  }
 }
 
 export async function generatePackageJson(

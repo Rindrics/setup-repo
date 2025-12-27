@@ -4,6 +4,8 @@ import * as path from 'node:path';
 import {
   generatePackageJson,
   generateProject,
+  loadTemplate,
+  TemplateError,
   writeGeneratedFiles,
 } from './project';
 
@@ -16,6 +18,43 @@ describe('project generator', () => {
 
   afterEach(async () => {
     await fs.rm(testDir, { recursive: true, force: true });
+  });
+
+  describe('loadTemplate', () => {
+    test('should throw TemplateError for path traversal attempt', async () => {
+      expect(loadTemplate('../../../etc/passwd', {})).rejects.toThrow(
+        TemplateError,
+      );
+      expect(loadTemplate('../../../etc/passwd', {})).rejects.toThrow(
+        'resolves outside templates directory',
+      );
+    });
+
+    test('should throw TemplateError for non-existent template', async () => {
+      expect(loadTemplate('non-existent.ejs', {})).rejects.toThrow(
+        TemplateError,
+      );
+      expect(loadTemplate('non-existent.ejs', {})).rejects.toThrow(
+        'Template not found',
+      );
+    });
+
+    test('should load and render valid template', async () => {
+      const result = await loadTemplate('typescript/package.json.ejs', {
+        name: 'test',
+        author: '',
+        versions: {
+          '@biomejs/biome': '1.0.0',
+          '@commitlint/cli': '1.0.0',
+          '@commitlint/config-conventional': '1.0.0',
+          'bun-types': '1.0.0',
+          husky: '1.0.0',
+          typescript: '1.0.0',
+        },
+      });
+
+      expect(result).toContain('"name": "test"');
+    });
   });
 
   describe('generatePackageJson', () => {
