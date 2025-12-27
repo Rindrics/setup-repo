@@ -104,6 +104,54 @@ export async function generatePackageJson(
   }
 }
 
+export async function generateTsconfig(
+  options: InitOptions,
+): Promise<GeneratedFile> {
+  const templatePath = `${options.lang}/tsconfig.json.ejs`;
+  const content = await loadTemplate(templatePath, {});
+  return {
+    path: 'tsconfig.json',
+    content,
+  };
+}
+
+export async function generateEntryPoint(
+  options: InitOptions,
+): Promise<GeneratedFile> {
+  const templatePath = `${options.lang}/src/index.ts.ejs`;
+  const content = await loadTemplate(templatePath, {
+    name: options.projectName,
+  });
+  return {
+    path: 'src/index.ts',
+    content,
+  };
+}
+
+export async function generateTagprConfig(
+  options: InitOptions,
+): Promise<GeneratedFile> {
+  const templatePath = `${options.lang}/.tagpr.ejs`;
+  const content = await loadTemplate(templatePath, {});
+  return {
+    path: '.tagpr',
+    content,
+  };
+}
+
+export async function generateTagprWorkflow(
+  options: InitOptions,
+): Promise<GeneratedFile> {
+  const templatePath = 'common/workflows/tagpr.yml.ejs';
+  const content = await loadTemplate(templatePath, {
+    isDevcode: options.isDevcode,
+  });
+  return {
+    path: '.github/workflows/tagpr.yml',
+    content,
+  };
+}
+
 export class FileWriteError extends Error {
   constructor(
     message: string,
@@ -201,7 +249,14 @@ export async function generateProject(options: InitOptions): Promise<void> {
   // Use targetDir if specified, otherwise use projectName as directory name
   const outputDir = options.targetDir ?? options.projectName;
 
-  const files: GeneratedFile[] = [await generatePackageJson(options)];
+  // Generate all project files in parallel
+  const files: GeneratedFile[] = await Promise.all([
+    generatePackageJson(options),
+    generateTsconfig(options),
+    generateEntryPoint(options),
+    generateTagprConfig(options),
+    generateTagprWorkflow(options),
+  ]);
 
   try {
     await writeGeneratedFiles(outputDir, files);

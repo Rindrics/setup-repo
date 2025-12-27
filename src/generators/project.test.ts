@@ -1,15 +1,20 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import {
+  generateEntryPoint,
   generatePackageJson,
   generateProject,
+  generateTagprConfig,
+  generateTagprWorkflow,
+  generateTsconfig,
   loadTemplate,
   ProjectNameError,
   TemplateError,
   validateProjectName,
   writeGeneratedFiles,
 } from './project';
+import * as npmUtils from '../utils/npm';
 
 describe('project generator', () => {
   const testDir = path.join(import.meta.dir, '../../.test-output');
@@ -61,6 +66,31 @@ describe('project generator', () => {
   });
 
   describe('generatePackageJson', () => {
+    let getNpmUsernameSpy: ReturnType<typeof spyOn>;
+    let getLatestVersionsSpy: ReturnType<typeof spyOn>;
+
+    beforeEach(() => {
+      getNpmUsernameSpy = spyOn(npmUtils, 'getNpmUsername').mockResolvedValue(
+        'mocked-user',
+      );
+      getLatestVersionsSpy = spyOn(
+        npmUtils,
+        'getLatestVersions',
+      ).mockResolvedValue({
+        '@biomejs/biome': '1.0.0',
+        '@commitlint/cli': '1.0.0',
+        '@commitlint/config-conventional': '1.0.0',
+        'bun-types': '1.0.0',
+        husky: '1.0.0',
+        typescript: '1.0.0',
+      });
+    });
+
+    afterEach(() => {
+      getNpmUsernameSpy.mockRestore();
+      getLatestVersionsSpy.mockRestore();
+    });
+
     test('should generate package.json with project name', async () => {
       const result = await generatePackageJson({
         projectName: 'my-awesome-project',
@@ -83,6 +113,16 @@ describe('project generator', () => {
       expect(result.content).toContain('"build"');
       expect(result.content).toContain('"test"');
       expect(result.content).toContain('"check"');
+    });
+
+    test('should include mocked author', async () => {
+      const result = await generatePackageJson({
+        projectName: 'test-project',
+        lang: 'typescript',
+        isDevcode: false,
+      });
+
+      expect(result.content).toContain('"author": "mocked-user"');
     });
   });
 
@@ -144,7 +184,103 @@ describe('project generator', () => {
     });
   });
 
+  describe('generateTsconfig', () => {
+    test('should generate tsconfig.json', async () => {
+      const result = await generateTsconfig({
+        projectName: 'test-project',
+        lang: 'typescript',
+        isDevcode: false,
+      });
+
+      expect(result.path).toBe('tsconfig.json');
+      expect(result.content).toContain('"target": "ES2022"');
+      expect(result.content).toContain('"moduleResolution": "bundler"');
+      expect(result.content).toContain('"bun-types"');
+    });
+  });
+
+  describe('generateEntryPoint', () => {
+    test('should generate src/index.ts with project name', async () => {
+      const result = await generateEntryPoint({
+        projectName: 'my-cool-project',
+        lang: 'typescript',
+        isDevcode: false,
+      });
+
+      expect(result.path).toBe('src/index.ts');
+      expect(result.content).toContain('my-cool-project');
+    });
+  });
+
+  describe('generateTagprConfig', () => {
+    test('should generate .tagpr with versionFile for TypeScript', async () => {
+      const result = await generateTagprConfig({
+        projectName: 'test-project',
+        lang: 'typescript',
+        isDevcode: false,
+      });
+
+      expect(result.path).toBe('.tagpr');
+      expect(result.content).toContain('versionFile = "package.json"');
+    });
+  });
+
+  describe('generateTagprWorkflow', () => {
+    test('should generate tagpr.yml for devcode project', async () => {
+      const result = await generateTagprWorkflow({
+        projectName: 'test-devcode',
+        lang: 'typescript',
+        isDevcode: true,
+      });
+
+      expect(result.path).toBe('.github/workflows/tagpr.yml');
+      expect(result.content).toContain(
+        'GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}',
+      );
+      expect(result.content).toContain('# TODO: After replace-devcode');
+    });
+
+    test('should generate tagpr.yml for production project', async () => {
+      const result = await generateTagprWorkflow({
+        projectName: 'test-prod',
+        lang: 'typescript',
+        isDevcode: false,
+      });
+
+      expect(result.path).toBe('.github/workflows/tagpr.yml');
+      expect(result.content).toContain(
+        'GITHUB_TOKEN: ${{ secrets.PAT_FOR_TAGPR }}',
+      );
+      expect(result.content).not.toContain('# TODO: After replace-devcode');
+    });
+  });
+
   describe('generateProject', () => {
+    let getNpmUsernameSpy: ReturnType<typeof spyOn>;
+    let getLatestVersionsSpy: ReturnType<typeof spyOn>;
+
+    beforeEach(() => {
+      getNpmUsernameSpy = spyOn(npmUtils, 'getNpmUsername').mockResolvedValue(
+        'mocked-user',
+      );
+      getLatestVersionsSpy = spyOn(
+        npmUtils,
+        'getLatestVersions',
+      ).mockResolvedValue({
+        '@biomejs/biome': '1.0.0',
+        '@commitlint/cli': '1.0.0',
+        '@commitlint/config-conventional': '1.0.0',
+        'bun-types': '1.0.0',
+        husky: '1.0.0',
+        typescript: '1.0.0',
+      });
+    });
+
+    afterEach(() => {
+      getNpmUsernameSpy.mockRestore();
+      getLatestVersionsSpy.mockRestore();
+    });
+
     test('should throw for invalid project name', async () => {
       expect(
         generateProject({
@@ -170,6 +306,26 @@ describe('project generator', () => {
       const pkg = JSON.parse(content);
 
       expect(pkg.name).toBe('new-project');
+      expect(pkg.author).toBe('mocked-user');
+    });
+
+    test('should generate all expected files', async () => {
+      const projectDir = path.join(testDir, 'full-project');
+
+      await generateProject({
+        projectName: 'full-project',
+        lang: 'typescript',
+        isDevcode: true,
+        targetDir: projectDir,
+      });
+
+      // Check all files exist
+      const files = await fs.readdir(projectDir, { recursive: true });
+      expect(files).toContain('package.json');
+      expect(files).toContain('tsconfig.json');
+      expect(files).toContain('.tagpr');
+      expect(files).toContain(path.join('src', 'index.ts'));
+      expect(files).toContain(path.join('.github', 'workflows', 'tagpr.yml'));
     });
   });
 });
