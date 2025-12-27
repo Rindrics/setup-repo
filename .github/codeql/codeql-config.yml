@@ -1,4 +1,4 @@
-name: "CodeQL config for setup-repo"
+name: "CodeQL config for initrepo"
 
 paths:
   - src

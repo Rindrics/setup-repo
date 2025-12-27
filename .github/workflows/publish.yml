@@ -28,15 +28,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: pnpm --filter @rindrics/setup-repo build
+        run: pnpm --filter @rindrics/initrepo build
 
       - name: License check
-        run: pnpm --filter @rindrics/setup-repo license:check
+        run: pnpm --filter @rindrics/initrepo license:check
 
       - name: Test
-        run: pnpm --filter @rindrics/setup-repo test
+        run: pnpm --filter @rindrics/initrepo test
 
       - name: Publish to npm with provenance
-        run: pnpm --filter @rindrics/setup-repo publish --access public --no-git-checks
+        run: pnpm --filter @rindrics/initrepo publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

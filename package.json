@@ -1,5 +1,5 @@
 {
-  "name": "@rindrics/setup-repo",
+  "name": "@rindrics/initrepo",
   "version": "0.0.1",
   "description": "setup GitHub repo with dev tools",
   "type": "module",
@@ -21,7 +21,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Rindrics/setup-repo.git"
+    "url": "git+https://github.com/Rindrics/initrepo.git"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",

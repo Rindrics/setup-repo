@@ -1,1 +1,1 @@
-# @rindrics/setup-repo
+# @rindrics/initrepo

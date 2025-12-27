@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@rindrics/setup-repo",
+      "name": "@rindrics/initrepo",
       "dependencies": {
         "commander": "^14.0.2",
         "ejs": "^3.1.0",
