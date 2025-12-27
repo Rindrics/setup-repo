@@ -1,0 +1,1 @@
+# @rindrics/setup-repo
