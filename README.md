@@ -2,22 +2,19 @@
 
 CLI tool for rapid repository setup with CI/CD, code quality tools, and release automation via [tagpr](https://github.com/Songmu/tagpr).
 
-## Installation
-
-```bash
-npm install -g @rindrics/initrepo
-```
-
 ## Usage
 
 ### Create a new project
 
 ```bash
-# Interactive mode (prompts for options)
-initrepo init my-super-project
+# Using npx (recommended)
+npx @rindrics/initrepo init my-super-project
+
+# Using pnpm
+pnpm dlx @rindrics/initrepo init my-super-project
 
 # Non-interactive mode
-initrepo init my-super-project --devcode --create-repo --private
+npx @rindrics/initrepo init my-super-project --devcode --create-repo --private
 ```
 
 Options:
@@ -26,7 +23,12 @@ Options:
 - `-p, --private` - Make GitHub repository private
 - `-a, --author <name>` - Package author
 
-Requires `GITHUB_TOKEN` environment variable for repository creation.
+To create a GitHub repository, set `GITHUB_TOKEN`:
+
+```bash
+# Using GitHub CLI
+GITHUB_TOKEN=$(gh auth token) npx @rindrics/initrepo init my-project --create-repo
+```
 
 ### Prepare for release
 
@@ -34,7 +36,7 @@ When ready to publish, convert your devcode project:
 
 ```bash
 cd my-super-project
-initrepo prepare-release @scope/my-package
+npx @rindrics/initrepo prepare-release @scope/my-package
 ```
 
 This will:
