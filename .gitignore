@@ -3,3 +3,6 @@ dist/
 
 # Test output directories
 test-*/
+
+# Auto-generated files
+src/generators/embedded-templates.ts

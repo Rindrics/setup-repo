@@ -29,26 +29,27 @@ describe('project generator', () => {
   });
 
   describe('loadTemplate', () => {
-    test('should throw TemplateError for path traversal attempt', async () => {
-      expect(loadTemplate('../../../etc/passwd', {})).rejects.toThrow(
+    test('should throw TemplateError for path traversal attempt', () => {
+      // With embedded templates, path traversal simply results in "not found"
+      expect(() => loadTemplate('../../../etc/passwd', {})).toThrow(
         TemplateError,
       );
-      expect(loadTemplate('../../../etc/passwd', {})).rejects.toThrow(
-        'resolves outside templates directory',
-      );
-    });
-
-    test('should throw TemplateError for non-existent template', async () => {
-      expect(loadTemplate('non-existent.ejs', {})).rejects.toThrow(
-        TemplateError,
-      );
-      expect(loadTemplate('non-existent.ejs', {})).rejects.toThrow(
+      expect(() => loadTemplate('../../../etc/passwd', {})).toThrow(
         'Template not found',
       );
     });
 
-    test('should load and render valid template', async () => {
-      const result = await loadTemplate('typescript/package.json.ejs', {
+    test('should throw TemplateError for non-existent template', () => {
+      expect(() => loadTemplate('non-existent.ejs', {})).toThrow(
+        TemplateError,
+      );
+      expect(() => loadTemplate('non-existent.ejs', {})).toThrow(
+        'Template not found',
+      );
+    });
+
+    test('should load and render valid template', () => {
+      const result = loadTemplate('typescript/package.json.ejs', {
         name: 'test',
         author: '',
         isDevcode: false,

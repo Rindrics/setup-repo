@@ -4,8 +4,7 @@ import ejs from 'ejs';
 import type { InitOptions } from '../types';
 import { getLatestActionVersions } from '../utils/github';
 import { getLatestVersions, getNpmUsername } from '../utils/npm';
-
-const TEMPLATES_DIR = path.join(import.meta.dir, '../templates');
+import { EMBEDDED_TEMPLATES } from './embedded-templates';
 
 const DEV_DEPENDENCIES = [
   '@biomejs/biome',
@@ -32,36 +31,18 @@ export class TemplateError extends Error {
   }
 }
 
-export async function loadTemplate(
+export function loadTemplate(
   templatePath: string,
   data: Record<string, unknown>,
-): Promise<string> {
-  const resolvedTemplatesDir = path.resolve(TEMPLATES_DIR);
-  const fullPath = path.resolve(TEMPLATES_DIR, templatePath);
+): string {
+  // Normalize path separators
+  const normalizedPath = templatePath.replace(/\\/g, '/');
 
-  if (!fullPath.startsWith(resolvedTemplatesDir + path.sep)) {
+  const template = EMBEDDED_TEMPLATES[normalizedPath];
+  if (!template) {
     throw new TemplateError(
-      `Invalid template path: "${templatePath}" resolves outside templates directory`,
+      `Template not found: "${templatePath}"`,
       templatePath,
-    );
-  }
-
-  let template: string;
-  try {
-    template = await fs.readFile(fullPath, 'utf-8');
-  } catch (error) {
-    const fsError = error as NodeJS.ErrnoException;
-    if (fsError.code === 'ENOENT') {
-      throw new TemplateError(
-        `Template not found: "${templatePath}"`,
-        templatePath,
-        fsError,
-      );
-    }
-    throw new TemplateError(
-      `Failed to read template "${templatePath}": ${fsError.message}`,
-      templatePath,
-      fsError,
     );
   }
 
@@ -87,7 +68,7 @@ export async function generatePackageJson(
     ]);
     const author = detectedAuthor ?? '';
     const templatePath = `${options.lang}/package.json.ejs`;
-    const content = await loadTemplate(templatePath, {
+    const content = loadTemplate(templatePath, {
       name: options.projectName,
       isDevcode: options.isDevcode,
       author,
@@ -104,14 +85,14 @@ export async function generatePackageJson(
 export async function generateTsconfig(
   options: InitOptions,
 ): Promise<GeneratedFile> {
-  const content = await loadTemplate(`${options.lang}/tsconfig.json.ejs`, {});
+  const content = loadTemplate(`${options.lang}/tsconfig.json.ejs`, {});
   return { path: 'tsconfig.json', content };
 }
 
 export async function generateEntryPoint(
   options: InitOptions,
 ): Promise<GeneratedFile> {
-  const content = await loadTemplate(`${options.lang}/src/index.ts.ejs`, {
+  const content = loadTemplate(`${options.lang}/src/index.ts.ejs`, {
     name: options.projectName,
   });
   return { path: 'src/index.ts', content };
@@ -120,7 +101,7 @@ export async function generateEntryPoint(
 export async function generateTagprConfig(
   options: InitOptions,
 ): Promise<GeneratedFile> {
-  const content = await loadTemplate(`${options.lang}/.tagpr.ejs`, {});
+  const content = loadTemplate(`${options.lang}/.tagpr.ejs`, {});
   return { path: '.tagpr', content };
 }
 
@@ -128,7 +109,7 @@ export async function generateTagprWorkflow(
   options: InitOptions,
   actionVersions: Record<string, string>,
 ): Promise<GeneratedFile> {
-  const content = await loadTemplate('common/workflows/tagpr.yml.ejs', {
+  const content = loadTemplate('common/workflows/tagpr.yml.ejs', {
     isDevcode: options.isDevcode,
     actionVersions,
   });
@@ -139,7 +120,7 @@ export async function generateCiWorkflow(
   options: InitOptions,
   actionVersions: Record<string, string>,
 ): Promise<GeneratedFile> {
-  const content = await loadTemplate(`${options.lang}/workflows/ci.yml.ejs`, {
+  const content = loadTemplate(`${options.lang}/workflows/ci.yml.ejs`, {
     actionVersions,
   });
   return { path: '.github/workflows/ci.yml', content };
@@ -149,7 +130,7 @@ export async function generateCodeqlWorkflow(
   options: InitOptions,
   actionVersions: Record<string, string>,
 ): Promise<GeneratedFile> {
-  const content = await loadTemplate(
+  const content = loadTemplate(
     `${options.lang}/workflows/codeql.yml.ejs`,
     { actionVersions },
   );
@@ -159,7 +140,7 @@ export async function generateCodeqlWorkflow(
 export async function generateCodeqlConfig(
   options: InitOptions,
 ): Promise<GeneratedFile> {
-  const content = await loadTemplate(
+  const content = loadTemplate(
     `${options.lang}/codeql/codeql-config.yml.ejs`,
     { name: options.projectName },
   );
@@ -169,14 +150,14 @@ export async function generateCodeqlConfig(
 export async function generateDependabot(
   options: InitOptions,
 ): Promise<GeneratedFile> {
-  const content = await loadTemplate('common/dependabot.yml.ejs', {
+  const content = loadTemplate('common/dependabot.yml.ejs', {
     lang: options.lang,
   });
   return { path: '.github/dependabot.yml', content };
 }
 
 export async function generateReleaseConfig(): Promise<GeneratedFile> {
-  const content = await loadTemplate('common/release.yml.ejs', {});
+  const content = loadTemplate('common/release.yml.ejs', {});
   return { path: '.github/release.yml', content };
 }
 
