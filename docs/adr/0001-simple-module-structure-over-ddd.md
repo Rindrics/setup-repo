@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-We are building `@rindrics/repo-setup`, a CLI tool that generates project scaffolding with:
+We are building `@rindrics/initrepo`, a CLI tool that generates project scaffolding with:
 
 - CI/CD workflows (test, lint, tagpr, release)
 - husky configuration

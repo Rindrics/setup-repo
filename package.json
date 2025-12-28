@@ -4,7 +4,7 @@
   "description": "setup GitHub repo with dev tools",
   "type": "module",
   "bin": {
-    "repo-setup": "./dist/cli.js"
+    "initrepo": "./dist/cli.js"
   },
   "scripts": {
     "dev": "bun run src/cli.ts",
