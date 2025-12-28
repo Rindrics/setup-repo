@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.1.4](https://github.com/Rindrics/initrepo/compare/v0.1.3...v0.1.4) - 2025-12-28
+- ci: use Node.js 24 to use npm 11.6 by @Rindrics in https://github.com/Rindrics/initrepo/pull/15
+
 ## [v0.1.3](https://github.com/Rindrics/initrepo/compare/v0.1.2...v0.1.3) - 2025-12-28
 - ci: update npm to use OIDC by @Rindrics in https://github.com/Rindrics/initrepo/pull/13
 
