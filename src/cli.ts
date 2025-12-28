@@ -2,6 +2,7 @@
 import { Command } from 'commander';
 import packageJson from '../package.json';
 import { registerInitCommand } from './commands/init';
+import { registerPrepareReleaseCommand } from './commands/prepare-release';
 
 const { version: VERSION, name: NAME } = packageJson;
 
@@ -14,6 +15,7 @@ export function createProgram(): Command {
     .version(VERSION);
 
   registerInitCommand(program);
+  registerPrepareReleaseCommand(program);
 
   return program;
 }

@@ -360,4 +360,4 @@ describe('project generator', () => {
       expect(files).toContain(path.join('.github', 'workflows', 'tagpr.yml'));
     });
   });
-})
+});
