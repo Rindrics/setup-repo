@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as npmUtils from '../utils/npm';
+import { getLatestActionVersions } from '../utils/github';
 import {
   generateEntryPoint,
   generatePackageJson,
@@ -234,11 +235,15 @@ describe('project generator', () => {
     }
 
     test('should generate tagpr.yml for devcode project', async () => {
-      const result = await generateTagprWorkflow({
-        projectName: 'test-devcode',
-        lang: 'typescript',
-        isDevcode: true,
-      });
+      const actionVersions = await getLatestActionVersions();
+      const result = await generateTagprWorkflow(
+        {
+          projectName: 'test-devcode',
+          lang: 'typescript',
+          isDevcode: true,
+        },
+        actionVersions,
+      );
 
       expect(result.path).toBe('.github/workflows/tagpr.yml');
       expect(result.content).toContain(
@@ -256,11 +261,15 @@ describe('project generator', () => {
     });
 
     test('should generate tagpr.yml for production project', async () => {
-      const result = await generateTagprWorkflow({
-        projectName: 'test-prod',
-        lang: 'typescript',
-        isDevcode: false,
-      });
+      const actionVersions = await getLatestActionVersions();
+      const result = await generateTagprWorkflow(
+        {
+          projectName: 'test-prod',
+          lang: 'typescript',
+          isDevcode: false,
+        },
+        actionVersions,
+      );
 
       expect(result.path).toBe('.github/workflows/tagpr.yml');
       expect(result.content).toContain(
@@ -351,4 +360,4 @@ describe('project generator', () => {
       expect(files).toContain(path.join('.github', 'workflows', 'tagpr.yml'));
     });
   });
-});
+})

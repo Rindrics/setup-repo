@@ -13,7 +13,7 @@ jobs:
   tagpr:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@<%= actions['actions/checkout'] %>
+      - uses: actions/checkout@<%= actionVersions['actions/checkout'] %>
 <% if (isDevcode) { -%>
         # TODO: After replace-devcode, add token: ${{ secrets.PAT_FOR_TAGPR }}
 <% } else { -%>
@@ -21,7 +21,7 @@ jobs:
           token: ${{ secrets.PAT_FOR_TAGPR }}
 <% } -%>
 
-      - uses: Songmu/tagpr@<%= actions['Songmu/tagpr'] %>
+      - uses: Songmu/tagpr@<%= actionVersions['Songmu/tagpr'] %>
         env:
 <% if (isDevcode) { -%>
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

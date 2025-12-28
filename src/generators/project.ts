@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import ejs from 'ejs';
 import type { InitOptions } from '../types';
-import { GITHUB_ACTIONS, getLatestActionVersions } from '../utils/github';
+import { getLatestActionVersions } from '../utils/github';
 import { getLatestVersions, getNpmUsername } from '../utils/npm';
 
 const TEMPLATES_DIR = path.join(import.meta.dir, '../templates');
@@ -36,7 +36,6 @@ export async function loadTemplate(
   templatePath: string,
   data: Record<string, unknown>,
 ): Promise<string> {
-  // Resolve and validate the path to prevent path traversal attacks
   const resolvedTemplatesDir = path.resolve(TEMPLATES_DIR);
   const fullPath = path.resolve(TEMPLATES_DIR, templatePath);
 
@@ -82,7 +81,6 @@ export async function generatePackageJson(
   options: InitOptions,
 ): Promise<GeneratedFile> {
   try {
-    // Use provided author or detect from language-specific tools
     const [versions, detectedAuthor] = await Promise.all([
       getLatestVersions(DEV_DEPENDENCIES),
       options.author ? Promise.resolve(options.author) : getNpmUsername(),
@@ -95,10 +93,7 @@ export async function generatePackageJson(
       author,
       versions,
     });
-    return {
-      path: 'package.json',
-      content,
-    };
+    return { path: 'package.json', content };
   } catch (error) {
     throw new Error(
       `Failed to generate package.json: ${error instanceof Error ? error.message : String(error)}`,
@@ -109,51 +104,80 @@ export async function generatePackageJson(
 export async function generateTsconfig(
   options: InitOptions,
 ): Promise<GeneratedFile> {
-  const templatePath = `${options.lang}/tsconfig.json.ejs`;
-  const content = await loadTemplate(templatePath, {});
-  return {
-    path: 'tsconfig.json',
-    content,
-  };
+  const content = await loadTemplate(`${options.lang}/tsconfig.json.ejs`, {});
+  return { path: 'tsconfig.json', content };
 }
 
 export async function generateEntryPoint(
   options: InitOptions,
 ): Promise<GeneratedFile> {
-  const templatePath = `${options.lang}/src/index.ts.ejs`;
-  const content = await loadTemplate(templatePath, {
+  const content = await loadTemplate(`${options.lang}/src/index.ts.ejs`, {
     name: options.projectName,
   });
-  return {
-    path: 'src/index.ts',
-    content,
-  };
+  return { path: 'src/index.ts', content };
 }
 
 export async function generateTagprConfig(
   options: InitOptions,
 ): Promise<GeneratedFile> {
-  const templatePath = `${options.lang}/.tagpr.ejs`;
-  const content = await loadTemplate(templatePath, {});
-  return {
-    path: '.tagpr',
-    content,
-  };
+  const content = await loadTemplate(`${options.lang}/.tagpr.ejs`, {});
+  return { path: '.tagpr', content };
 }
 
 export async function generateTagprWorkflow(
   options: InitOptions,
+  actionVersions: Record<string, string>,
 ): Promise<GeneratedFile> {
-  const actionVersions = await getLatestActionVersions(GITHUB_ACTIONS);
-  const templatePath = 'common/workflows/tagpr.yml.ejs';
-  const content = await loadTemplate(templatePath, {
+  const content = await loadTemplate('common/workflows/tagpr.yml.ejs', {
     isDevcode: options.isDevcode,
-    actions: actionVersions,
+    actionVersions,
   });
-  return {
-    path: '.github/workflows/tagpr.yml',
-    content,
-  };
+  return { path: '.github/workflows/tagpr.yml', content };
+}
+
+export async function generateCiWorkflow(
+  options: InitOptions,
+  actionVersions: Record<string, string>,
+): Promise<GeneratedFile> {
+  const content = await loadTemplate(`${options.lang}/workflows/ci.yml.ejs`, {
+    actionVersions,
+  });
+  return { path: '.github/workflows/ci.yml', content };
+}
+
+export async function generateCodeqlWorkflow(
+  options: InitOptions,
+  actionVersions: Record<string, string>,
+): Promise<GeneratedFile> {
+  const content = await loadTemplate(
+    `${options.lang}/workflows/codeql.yml.ejs`,
+    { actionVersions },
+  );
+  return { path: '.github/workflows/codeql.yml', content };
+}
+
+export async function generateCodeqlConfig(
+  options: InitOptions,
+): Promise<GeneratedFile> {
+  const content = await loadTemplate(
+    `${options.lang}/codeql/codeql-config.yml.ejs`,
+    { name: options.projectName },
+  );
+  return { path: '.github/codeql/codeql-config.yml', content };
+}
+
+export async function generateDependabot(
+  options: InitOptions,
+): Promise<GeneratedFile> {
+  const content = await loadTemplate('common/dependabot.yml.ejs', {
+    lang: options.lang,
+  });
+  return { path: '.github/dependabot.yml', content };
+}
+
+export async function generateReleaseConfig(): Promise<GeneratedFile> {
+  const content = await loadTemplate('common/release.yml.ejs', {});
+  return { path: '.github/release.yml', content };
 }
 
 export class FileWriteError extends Error {
@@ -190,7 +214,6 @@ export async function writeGeneratedFiles(
       if (fileDir !== targetDir) {
         await fs.mkdir(fileDir, { recursive: true });
       }
-
       await fs.writeFile(filePath, file.content, 'utf-8');
     } catch (error) {
       const fsError = error as NodeJS.ErrnoException;
@@ -213,7 +236,6 @@ export class ProjectNameError extends Error {
   }
 }
 
-// Allow scoped packages (@scope/name), letters, numbers, hyphens, underscores, and dots (not leading/trailing)
 const VALID_PROJECT_NAME_REGEX = /^(@[\w-]+\/)?[\w][\w.-]*[\w]$|^[\w]$/;
 
 export function validateProjectName(projectName: string): void {
@@ -221,7 +243,6 @@ export function validateProjectName(projectName: string): void {
     throw new ProjectNameError('Project name cannot be empty', projectName);
   }
 
-  // Check for path separators (except in scoped package prefix)
   const nameWithoutScope = projectName.replace(/^@[\w-]+\//, '');
   if (nameWithoutScope.includes('/') || nameWithoutScope.includes('\\')) {
     throw new ProjectNameError(
@@ -230,7 +251,6 @@ export function validateProjectName(projectName: string): void {
     );
   }
 
-  // Check for leading/trailing dots
   if (nameWithoutScope.startsWith('.') || nameWithoutScope.endsWith('.')) {
     throw new ProjectNameError(
       `Project name "${projectName}" cannot start or end with a dot`,
@@ -238,7 +258,6 @@ export function validateProjectName(projectName: string): void {
     );
   }
 
-  // Check for valid characters
   if (!VALID_PROJECT_NAME_REGEX.test(projectName)) {
     throw new ProjectNameError(
       `Project name "${projectName}" contains invalid characters. Use only letters, numbers, hyphens, underscores, and dots.`,
@@ -250,16 +269,20 @@ export function validateProjectName(projectName: string): void {
 export async function generateProject(options: InitOptions): Promise<void> {
   validateProjectName(options.projectName);
 
-  // Use targetDir if specified, otherwise use projectName as directory name
   const outputDir = options.targetDir ?? options.projectName;
+  const actionVersions = await getLatestActionVersions();
 
-  // Generate all project files in parallel
   const files: GeneratedFile[] = await Promise.all([
     generatePackageJson(options),
     generateTsconfig(options),
     generateEntryPoint(options),
     generateTagprConfig(options),
-    generateTagprWorkflow(options),
+    generateTagprWorkflow(options, actionVersions),
+    generateCiWorkflow(options, actionVersions),
+    generateCodeqlWorkflow(options, actionVersions),
+    generateCodeqlConfig(options),
+    generateDependabot(options),
+    generateReleaseConfig(),
   ]);
 
   try {
