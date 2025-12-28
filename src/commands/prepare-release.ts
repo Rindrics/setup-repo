@@ -1,6 +1,8 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import type { Command } from 'commander';
+import { loadTemplate } from '../generators/project';
+import { getLatestActionVersions } from '../utils/github';
 
 export interface PrepareReleaseOptions {
   /** New package name for release */
@@ -125,8 +127,8 @@ async function replaceInCodeqlConfig(
 }
 
 /**
- * Updates tagpr.yml: switches from GITHUB_TOKEN to PAT_FOR_TAGPR
- * This is a MANAGED replacement - only touches specific workflow patterns
+ * Updates tagpr.yml: regenerates from template with isDevcode=false
+ * This ensures all release-ready settings are applied
  */
 async function replaceInTagprWorkflow(
   targetDir: string,
@@ -135,34 +137,35 @@ async function replaceInTagprWorkflow(
 ): Promise<void> {
   const workflowPath = path.join(targetDir, '.github/workflows/tagpr.yml');
 
-  let content: string;
+  // Check if file exists
   try {
-    content = await fs.readFile(workflowPath, 'utf-8');
-  } catch (error) {
-    const fsError = error as NodeJS.ErrnoException;
-    if (fsError.code === 'ENOENT') {
-      return; // File doesn't exist, nothing to do
-    }
-    throw error;
+    await fs.access(workflowPath);
+  } catch {
+    return; // File doesn't exist, nothing to do
   }
 
-  // Replace GITHUB_TOKEN with PAT_FOR_TAGPR in env
-  content = content.replace(
-    /GITHUB_TOKEN: \$\{\{ secrets\.GITHUB_TOKEN \}\}/g,
-    'GITHUB_TOKEN: ${{ secrets.PAT_FOR_TAGPR }}',
-  );
+  const actionVersions = await getLatestActionVersions();
+  const content = await loadTemplate('common/workflows/tagpr.yml.ejs', {
+    isDevcode: false,
+    actionVersions,
+  });
 
-  // Add token to checkout if not present
-  content = content.replace(
-    /(uses: actions\/checkout@v\d+)\n(\s*)# TODO: After replace-devcode, add token: \$\{\{ secrets\.PAT_FOR_TAGPR \}\}/g,
-    '$1\n$2with:\n$2  token: ${{ secrets.PAT_FOR_TAGPR }}',
-  );
+  await fs.writeFile(workflowPath, content, 'utf-8');
+}
 
-  // Remove remaining TODO comments
-  content = content.replace(/\s*# TODO: After replace-devcode.*\n/g, '\n');
+/**
+ * Generates publish.yml workflow for npm publishing with OIDC
+ */
+async function generatePublishWorkflow(targetDir: string): Promise<void> {
+  const workflowDir = path.join(targetDir, '.github/workflows');
+  const workflowPath = path.join(workflowDir, 'publish.yml');
 
-  // Clean up extra blank lines
-  content = content.replace(/\n{3,}/g, '\n\n');
+  await fs.mkdir(workflowDir, { recursive: true });
+
+  const actionVersions = await getLatestActionVersions();
+  const content = await loadTemplate('common/workflows/publish.yml.ejs', {
+    actionVersions,
+  });
 
   await fs.writeFile(workflowPath, content, 'utf-8');
 }
@@ -292,6 +295,17 @@ export async function prepareRelease(
     }
   }
 
+  // Generate publish workflow for npm OIDC publishing
+  console.log('\n📦 Generating release workflows:');
+  try {
+    await generatePublishWorkflow(targetDir);
+    console.log('   ✅ .github/workflows/publish.yml (npm OIDC publishing)');
+  } catch (error) {
+    console.log(
+      `   ⚠️  publish.yml: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
   // Scan for unmanaged occurrences
   const unmanaged = await findUnmanagedOccurrences(targetDir, devcode);
 
@@ -312,6 +326,7 @@ export async function prepareRelease(
   console.log(`   Package renamed: ${devcode} → ${options.publishName}`);
   console.log(`   Private flag removed`);
   console.log(`   Workflows updated to use PAT_FOR_TAGPR`);
+  console.log(`   publish.yml generated for npm OIDC publishing`);
 
   console.log(`\n⚠️  Action required: Set up PAT_FOR_TAGPR secret`);
   console.log(`   1. Create a Personal Access Token (classic) at:`);
