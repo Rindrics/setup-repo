@@ -1,6 +1,6 @@
 {
   "name": "@rindrics/initrepo",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "setup GitHub repo with dev tools",
   "type": "module",
   "bin": {
