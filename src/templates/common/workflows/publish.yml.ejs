@@ -1,0 +1,36 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@<%= actionVersions['actions/checkout'] %>
+
+      - uses: oven-sh/setup-bun@<%= actionVersions['oven-sh/setup-bun'] %>
+
+      - uses: actions/setup-node@<%= actionVersions['actions/setup-node'] %>
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: bun install --frozen-lockfile
+
+      - name: Build
+        run: bun run build
+
+      - name: Test
+        run: bun test
+
+      - name: Publish to npm with provenance
+        run: npm publish --access public --provenance
+

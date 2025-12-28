@@ -4,6 +4,7 @@
  */
 export const GITHUB_ACTIONS = {
   'actions/checkout': 'v6',
+  'actions/setup-node': 'v4',
   'Songmu/tagpr': 'v1',
   'oven-sh/setup-bun': 'v2',
   'github/codeql-action': 'v3',
