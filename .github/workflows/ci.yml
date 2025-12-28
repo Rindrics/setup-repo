@@ -4,29 +4,36 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - 'src/**'
-      - 'package.json'
-      - 'tsconfig.json'
-      - 'biome.json'
-      - 'bun.lock'
-      - '.github/workflows/ci.yml'
   push:
     branches:
       - main
-    paths:
-      - 'src/**'
-      - 'package.json'
-      - 'tsconfig.json'
-      - 'biome.json'
-      - 'bun.lock'
-      - '.github/workflows/ci.yml'
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            src:
+              - 'src/**'
+              - 'package.json'
+              - 'tsconfig.json'
+              - 'biome.json'
+              - 'bun.lock'
+              - '.github/workflows/ci.yml'
+
   check:
+    needs: changes
+    if: needs.changes.outputs.src == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -44,6 +51,8 @@ jobs:
         run: bun run build
 
   test:
+    needs: changes
+    if: needs.changes.outputs.src == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
