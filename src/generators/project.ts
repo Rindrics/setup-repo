@@ -81,16 +81,17 @@ export async function generatePackageJson(
   options: InitOptions,
 ): Promise<GeneratedFile> {
   try {
-    // Fetch latest versions and npm username in parallel
-    const [versions, author] = await Promise.all([
+    // Use provided author or detect from language-specific tools
+    const [versions, detectedAuthor] = await Promise.all([
       getLatestVersions(DEV_DEPENDENCIES),
-      getNpmUsername(),
+      options.author ? Promise.resolve(options.author) : getNpmUsername(),
     ]);
+    const author = detectedAuthor ?? '';
     const templatePath = `${options.lang}/package.json.ejs`;
     const content = await loadTemplate(templatePath, {
       name: options.projectName,
       isDevcode: options.isDevcode,
-      author: author ?? '',
+      author,
       versions,
     });
     return {

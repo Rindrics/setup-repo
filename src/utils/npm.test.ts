@@ -74,11 +74,11 @@ describe('npm utils', () => {
   describe('getNpmUsername', () => {
     test('should return username when logged in', async () => {
       const mockExec = mock(() =>
-        Promise.resolve({ stdout: 'testuser\n', stderr: '' }),
+        Promise.resolve({ stdout: 'mocked-user\n', stderr: '' }),
       );
 
       const username = await getNpmUsername(mockExec);
-      expect(username).toBe('testuser');
+      expect(username).toBe('mocked-user');
       expect(mockExec).toHaveBeenCalledWith('npm whoami');
     });
 

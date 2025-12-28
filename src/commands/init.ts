@@ -44,6 +44,7 @@ export async function initProject(options: InitOptions): Promise<void> {
 interface InitCommandOptions {
   lang: string;
   devcode?: boolean;
+  author?: string;
 }
 
 export function registerInitCommand(program: Command): void {
@@ -57,6 +58,10 @@ export function registerInitCommand(program: Command): void {
       '-d, --devcode',
       'Mark project name as development code (will be replaced before release)',
     )
+    .option(
+      '-a, --author <name>',
+      'Package author (defaults to npm whoami for TypeScript)',
+    )
     .action(async (projectName: string, opts: InitCommandOptions) => {
       const lang = validateLanguage(opts.lang);
 
@@ -64,6 +69,6 @@ export function registerInitCommand(program: Command): void {
       const isDevcode =
         opts.devcode !== undefined ? opts.devcode : await promptIsDevcode();
 
-      await initProject({ projectName, lang, isDevcode });
+      await initProject({ projectName, lang, isDevcode, author: opts.author });
     });
 }

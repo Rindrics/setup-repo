@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import * as npmUtils from '../utils/npm';
 import {
   generateEntryPoint,
   generatePackageJson,
@@ -14,7 +15,6 @@ import {
   validateProjectName,
   writeGeneratedFiles,
 } from './project';
-import * as npmUtils from '../utils/npm';
 
 describe('project generator', () => {
   const testDir = path.join(import.meta.dir, '../../.test-output');
