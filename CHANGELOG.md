@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.1.1](https://github.com/Rindrics/setup-repo/compare/v0.1.0...v0.1.1) - 2025-12-28
+- fix: use bun on CI by @Rindrics in https://github.com/Rindrics/setup-repo/pull/9
+
 ## [v0.1.0](https://github.com/Rindrics/setup-repo/compare/v0.0.1...v0.1.0) - 2025-12-28
 - feat: enable initialization and release for TypeScript project by @Rindrics in https://github.com/Rindrics/setup-repo/pull/6
 - feat: initialize GitHub repo by init command by @Rindrics in https://github.com/Rindrics/setup-repo/pull/8
