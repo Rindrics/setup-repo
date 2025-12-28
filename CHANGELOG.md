@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.1.3](https://github.com/Rindrics/initrepo/compare/v0.1.2...v0.1.3) - 2025-12-28
+- ci: update npm to use OIDC by @Rindrics in https://github.com/Rindrics/initrepo/pull/13
+
 ## [v0.1.2](https://github.com/Rindrics/initrepo/compare/v0.1.1...v0.1.2) - 2025-12-28
 - ci: use OIDC by @Rindrics in https://github.com/Rindrics/initrepo/pull/11
 
